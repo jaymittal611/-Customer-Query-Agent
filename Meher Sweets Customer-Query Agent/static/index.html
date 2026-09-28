@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meher Sweets Support AI - Evaluation Center</title>
+  <style>
+    :root {
+      --primary: #c2410c;
+      --primary-hover: #9a3412;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --indigo: #4338ca;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header h1 { font-size: 1.6rem; color: var(--primary); }
+    .header span { font-size: 0.9rem; color: var(--text-muted); }
+    
+    .tabs { display: flex; gap: 12px; margin-bottom: 24px; }
+    .tab-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+    .stat-card h4 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+
+    /* Control Panel */
+    .control-panel { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .controls-left { display: flex; align-items: center; gap: 16px; }
+    .controls-left select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 600; }
+    .btn-run { background: var(--success); color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
+    .btn-run:hover { background: #15803d; }
+    .btn-run:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* Progress Banner Box */
+    .progress-banner { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.95rem; }
+    .progress-left { display: flex; gap: 18px; align-items: center; }
+    .progress-pill { background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-weight: 600; color: #334155; }
+    .progress-right { font-weight: 700; font-size: 1.05rem; }
+    .accuracy-highlight { color: var(--success); font-size: 1.2rem; }
+
+    /* Horizontal Progress Bar */
+    .progress-bar-bg { width: 100%; height: 10px; background-color: #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ea580c, #16a34a); transition: width 0.3s ease; }
+
+    /* Round Selection Tabs */
+    .round-selector-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .round-tab-btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #334155; }
+    .round-tab-btn.active { background: var(--indigo); color: #ffffff; border-color: var(--indigo); }
+    .round-tab-btn .badge-count { margin-left: 6px; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; background: rgba(0,0,0,0.1); }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .filter-bar select { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; }
+
+    /* Table */
+    .table-container { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: #f1f5f9; padding: 12px 16px; font-weight: 600; color: var(--text-muted); }
+    td { padding: 14px 16px; border-top: 1px solid var(--border); }
+    tr.case-row { cursor: pointer; }
+    tr.case-row:hover { background: #f8fafc; }
+    
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+    .badge-pass { background: #dcfce7; color: var(--success); }
+    .badge-fail { background: #fee2e2; color: var(--danger); }
+    .badge-tool { background: #e0e7ff; color: #4338ca; }
+    .badge-cat { background: #f1f5f9; color: #475569; font-weight: 500; }
+
+    .details-box { background: #fdfdfd; padding: 16px; border-left: 4px solid var(--primary); margin: 8px 0; border-radius: 0 8px 8px 0; }
+    .prompt-box { background: #fff7ed; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+    .reply-box { background: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+
+    /* Chat Playground */
+    #chatTab { display: none; }
+    .chat-box { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); height: 520px; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 75%; padding: 12px 16px; border-radius: 12px; line-height: 1.4; font-size: 0.95rem; }
+    .msg-user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .msg-bot { background: #f1f5f9; color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 2px; }
+    .chat-input { display: flex; border-top: 1px solid var(--border); }
+    .chat-input input { flex: 1; border: none; padding: 16px; outline: none; font-size: 0.95rem; }
+    .chat-input button { background: var(--primary); color: #fff; border: none; padding: 0 24px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🍬 Meher Sweets Support AI - Evaluation Center</h1>
+    <span>Model: llama3.1:8b (Local Ollama)</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" onclick="showMainTab('chat')">Live Query Playground</button>
+    <button class="tab-btn active" onclick="showMainTab('eval')">Evaluation Report & Test Trace</button>
+  </div>
+
+  <!-- EVALUATION TAB -->
+  <div id="evalTab">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h4>Mean Pass Rate</h4>
+        <div class="val" id="statPassRate">--%</div>
+      </div>
+      <div class="stat-card">
+        <h4>Total Cases / Passes</h4>
+        <div class="val" id="statTotalCases">--</div>
+      </div>
+      <div class="stat-card">
+        <h4>p50 Latency</h4>
+        <div class="val" id="statP50">-- ms</div>
+      </div>
+      <div class="stat-card">
+        <h4>Avg Tokens In</h4>
+        <div class="val" id="statTokens">2152</div>
+      </div>
+    </div>
+
+    <!-- RUN CONFIG PANEL -->
+    <div class="control-panel">
+      <div class="controls-left">
+        <label for="evalRounds"><strong>Evaluation Rounds:</strong></label>
+        <select id="evalRounds">
+          <option value="3" selected>3 Rounds (Full Robustness Protocol)</option>
+          <option value="1">1 Round (Fast Smoke Test)</option>
+          <option value="2">2 Rounds</option>
+          <option value="5">5 Rounds (Stress Test)</option>
+        </select>
+        <span id="runnerStatus" style="color: var(--text-muted); font-size: 0.9rem;">Ready.</span>
+      </div>
+      <button class="btn-run" id="btnRunEval" onclick="startEvaluation()">▶ Run Evaluation Now</button>
+    </div>
+
+    <!-- DUAL PROGRESS & RUNNING ACCURACY BANNER -->
+    <div class="progress-banner">
+      <div class="progress-info">
+        <!-- LEFT: Round, Evaluated, Remaining -->
+        <div class="progress-left">
+          <span class="progress-pill" id="lblRound">Round: Idle</span>
+          <span><strong>Evaluated:</strong> <span id="lblEvaluated">0</span></span>
+          <span><strong>Remaining:</strong> <span id="lblRemaining">69</span></span>
+        </div>
+        <!-- RIGHT: Running Accuracy -->
+        <div class="progress-right">
+          <span>Running Accuracy: </span>
+          <span class="accuracy-highlight" id="lblRunningAccuracy">--%</span>
+        </div>
+      </div>
+      <!-- Horizontal progress bar -->
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+    </div>
+
+    <!-- ROUND-BY-ROUND LOGS SECTION SELECTOR -->
+    <div style="margin-bottom: 8px;">
+      <strong style="font-size: 0.9rem; color: var(--text-muted);">SELECT ROUND LOG VIEW:</strong>
+    </div>
+    <div class="round-selector-bar" id="roundTabsContainer">
+      <button class="round-tab-btn active" onclick="switchRoundView(1)">Round-1 Logs <span class="badge-count" id="badgeR1">0/69</span></button>
+    </div>
+
+    <!-- FILTER BAR: Passed / Failed Only -->
+    <div class="filter-bar">
+      <div>
+        <label><strong>Filter Status: </strong></label>
+        <select id="filterStatus" onchange="renderTable()">
+          <option value="all">All Cases</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed</option>
+        </select>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
+        * Click any row to view all 4 guardrails (G1-G4) & citations.
+        <button onclick="loadSavedResults()" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: #fff; cursor: pointer;">Refresh Data</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Case ID</th>
+            <th>Category</th>
+            <th>User Query Prompt</th>
+            <th>Status</th>
+            <th>Guardrails</th>
+            <th>Action / Tool</th>
+          </tr>
+        </thead>
+        <tbody id="evalTableBody">
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading benchmark evaluation traces...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHAT PLAYGROUND TAB -->
+  <div id="chatTab">
+    <div class="chat-box">
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg msg-bot">Hello! I am an AI assistant for Meher Sweets & Namkeen. How can I help you today?</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Ask about prices (e.g. 2 kg Khaman Dhokla), delivery policies, or place an order..." onkeypress="handleKey(event)">
+        <button onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Multi-round data container: index 0 = Round 1, index 1 = Round 2, etc.
+    let allRoundsData = [[]];
+    let currentSelectedRound = 1;
+    let expandedRowId = null;
+    let chatHistory = [];
+
+    function showMainTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (tab === 'eval') {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('evalTab').style.display = 'block';
+        document.getElementById('chatTab').style.display = 'none';
+      } else {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('evalTab').style.display = 'none';
+        document.getElementById('chatTab').style.display = 'block';
+      }
+    }
+
+    function switchRoundView(roundNum) {
+      currentSelectedRound = roundNum;
+      document.querySelectorAll('.round-tab-btn').forEach((btn, idx) => {
+        if (idx + 1 === roundNum) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+      renderTable();
+    }
+
+    function buildRoundTabs(totalRounds) {
+      const container = document.getElementById('roundTabsContainer');
+      let html = '';
+      for (let r = 1; r <= totalRounds; r++) {
+        const roundData = allRoundsData[r - 1] || [];
+        const passedCount = roundData.filter(c => c.pass).length;
+        const totalCount = roundData.length;
+        const activeClass = (r === currentSelectedRound) ? 'active' : '';
+        html += `
+          <button class="round-tab-btn ${activeClass}" onclick="switchRoundView(${r})">
+            Round-${r} Logs <span class="badge-count" id="badgeR${r}">${passedCount}/${totalCount || 69}</span>
+          </button>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    async function loadSavedResults() {
+      try {
+        const res = await fetch('/api/results');
+        const data = await res.json();
+        if (data.runs && data.runs.length > 0) {
+          allRoundsData = data.runs;
+          const totalRounds = allRoundsData.length;
+          const casesPerRound = allRoundsData[0].length;
+
+          let totalPassedAcrossRuns = 0;
+          allRoundsData.forEach(run => {
+            totalPassedAcrossRuns += run.filter(c => c.pass).length;
+          });
+
+          const meanPassRate = ((totalPassedAcrossRuns / (totalRounds * casesPerRound)) * 100).toFixed(1);
+          document.getElementById('statPassRate').innerText = `${meanPassRate}%`;
+          document.getElementById('statTotalCases').innerText = `${casesPerRound} (${totalRounds} Rds)`;
+          
+          document.getElementById('lblRound').innerText = `Completed (${totalRounds} Rounds)`;
+          document.getElementById('lblEvaluated').innerText = `${casesPerRound}`;
+          document.getElementById('lblRemaining').innerText = '0';
+          document.getElementById('lblRunningAccuracy').innerText = `${meanPassRate}%`;
+          document.getElementById('progressBarFill').style.width = '100%';
+
+          // Calculate p50 latency
+          const lats = [];
+          allRoundsData.forEach(r => r.forEach(c => { if(c.latencies_ms) lats.push(c.latencies_ms); }));
+          lats.sort((a,b) => a-b);
+          if (lats.length > 0) {
+            document.getElementById('statP50').innerText = `${Math.round(lats[Math.floor(lats.length * 0.5)])} ms`;
+          }
+
+          if (currentSelectedRound > totalRounds) currentSelectedRound = 1;
+          buildRoundTabs(totalRounds);
+          renderTable();
+        }
+      } catch (err) {
+        console.error("Error loading results:", err);
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('evalTableBody');
+      const filter = document.getElementById('filterStatus').value;
+      const currentCases = allRoundsData[currentSelectedRound - 1] || [];
+
+      let filtered = currentCases;
+      if (filter === 'passed') {
+        filtered = currentCases.filter(c => c.pass === true);
+      } else if (filter === 'failed') {
+        filtered = currentCases.filter(c => c.pass === false);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">No cases match the selected filter in Round-${currentSelectedRound}.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach((c) => {
+        const promptText = Array.isArray(c.turns) ? c.turns[0] : (c.turns || '');
+        const passBadge = c.pass ? '<span class="badge badge-pass">PASSED</span>' : '<span class="badge badge-fail">FAILED</span>';
+        
+        let toolBadge = '<span style="color:#94a3b8;">None</span>';
+        if (c.actions && c.actions.length > 0 && c.actions[0] !== 'none') {
+          toolBadge = `<span class="badge badge-tool">${c.actions[0]}</span>`;
+        }
+
+        const isExpanded = expandedRowId === c.id;
+
+        html += `
+          <tr class="case-row" onclick="toggleRow('${c.id}')">
+            <td><strong>${c.id}</strong></td>
+            <td><span class="badge badge-cat">${c.category}</span></td>
+            <td style="max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${promptText}</td>
+            <td>${passBadge}</td>
+            <td>G1:${c.g1 ? '✓':'✗'} | G2:${c.g2 ? '✓':'✗'}</td>
+            <td>${toolBadge}</td>
+          </tr>
+        `;
+
+        if (isExpanded) {
+          const g3Passed = (c.g3 !== undefined) ? c.g3 : (c.reply && c.reply.length > 0 && c.reply.length <= 1200);
+          const g4Passed = (c.g4 !== undefined) ? c.g4 : (c.sources && c.sources.length > 0);
+
+          html += `
+            <tr>
+              <td colspan="6" style="padding: 0;">
+                <div class="details-box">
+                  <div style="font-size: 0.8rem; font-weight: 700; color: var(--indigo); margin-bottom: 8px;">
+                    LOG DETAIL: ROUND ${currentSelectedRound}
+                  </div>
+                  <div class="prompt-box">
+                    <strong style="color: var(--primary);">FULL USER PROMPTS:</strong><br>
+                    ${Array.isArray(c.turns) ? c.turns.map((t, i) => `<div><strong>Turn ${i+1}:</strong>${t}</div>`).join('') : c.turns}
+                  </div>
+                  <div class="reply-box">
+                    <strong>ASSISTANT REPLY GENERATED:</strong><br>
+                    ${c.reply || '<em>No reply</em>'}
+                  </div>
+                  <div style="font-size: 0.8rem; color: #64748b; display: flex; flex-wrap: wrap; gap: 16px;">
+                    <span><strong>G1 Identity:</strong> <strong style="color: ${c.g1 ? '#16a34a' : '#dc2626'}">${c.g1 ? 'Passed' : 'Failed'}</strong></span>
+                    <span><strong>G2 Grounded ₹:</strong> <strong style="color: ${c.g2 ? '#16a34a' : '#dc2626'}">${c.g2 ? 'Passed' : 'Failed'}</strong></span>
+                    <span><strong>G3 Length:</strong> <strong style="color: ${g3Passed ? '#16a34a' : '#dc2626'}">${g3Passed ? 'Passed (<1200 chars)' : 'Failed'}</strong></span>
+                    <span><strong>G4 Grounding:</strong> <strong style="color: ${g4Passed ? '#16a34a' : '#dc2626'}">${g4Passed ? 'Passed' : 'Failed'}</strong></span>
+                    <span><strong>Expected Action:</strong> <strong>${c.expected_action || 'none'}</strong></span>
+                    <span><strong>Sources:</strong> <code>${c.sources && c.sources.length ? c.sources.join(', ') : 'None'}</code></span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+      });
+      tbody.innerHTML = html;
+    }
+
+    function toggleRow(id) {
+      expandedRowId = (expandedRowId === id) ? null : id;
+      renderTable();
+    }
+
+    function startEvaluation() {
+      const btn = document.getElementById('btnRunEval');
+      const statusLabel = document.getElementById('runnerStatus');
+      const rounds = parseInt(document.getElementById('evalRounds').value);
+      
+      btn.disabled = true;
+      allRoundsData = Array.from({ length: rounds }, () => []);
+      currentSelectedRound = 1;
+      buildRoundTabs(rounds);
+      renderTable();
+
+      let totalOverallEvaluations = 69 * rounds;
+      let cumulativeEvaluated = 0;
+      let cumulativePassed = 0;
+
+      document.getElementById('progressBarFill').style.width = '0%';
+      document.getElementById('lblRound').innerText = `Round 1 of ${rounds}`;
+      document.getElementById('lblEvaluated').innerText = '0';
+      document.getElementById('lblRemaining').innerText = '69';
+      document.getElementById('lblRunningAccuracy').innerText = '0.0%';
+
+      const eventSource = new EventSource(`/api/run-eval-stream?passes=${rounds}`);
+
+      eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.status === 'started') {
+          totalOverallEvaluations = data.total * data.total_passes;
+          statusLabel.innerText = `Starting ${data.total_passes} rounds (${totalOverallEvaluations} total tests)...`;
+        } else if (data.status === 'progress') {
+          cumulativeEvaluated++;
+          if (data.case.pass) cumulativePassed++;
+
+          const rIdx = data.pass_num - 1;
+          if (!allRoundsData[rIdx]) allRoundsData[rIdx] = [];
+
+          // Upsert case in the round's array
+          const existingIdx = allRoundsData[rIdx].findIndex(x => x.id === data.case.id);
+          if (existingIdx >= 0) {
+            allRoundsData[rIdx][existingIdx] = data.case;
+          } else {
+            allRoundsData[rIdx].push(data.case);
+          }
+
+          // Automatically focus the tab of the actively running round
+          if (currentSelectedRound !== data.pass_num) {
+            currentSelectedRound = data.pass_num;
+          }
+
+          const runningAcc = ((cumulativePassed / cumulativeEvaluated) * 100).toFixed(1);
+          const percentDone = ((cumulativeEvaluated / totalOverallEvaluations) * 100).toFixed(1);
+
+          document.getElementById('lblRound').innerText = `Round ${data.pass_num} of ${data.total_passes}`;
+          document.getElementById('lblEvaluated').innerText = `${data.current} / ${data.total}`;
+          document.getElementById('lblRemaining').innerText = `${data.total - data.current}`;
+          document.getElementById('lblRunningAccuracy').innerText = `${runningAcc}%`;
+          document.getElementById('progressBarFill').style.width = `${percentDone}%`;
+
+          statusLabel.innerText = `Running [Round ${data.pass_num}/${data.total_passes}] Case ${data.current}/${data.total} (${data.case.id})...`;
+
+          // Update badge in round tabs
+          buildRoundTabs(data.total_passes);
+          renderTable();
+        } else if (data.status === 'finished') {
+          statusLabel.innerText = `Completed all ${data.total_passes} rounds! Mean Passed: ${data.passed}/${data.total}`;
+          statusLabel.style.color = '#16a34a';
+          document.getElementById('progressBarFill').style.width = '100%';
+          btn.disabled = false;
+          eventSource.close();
+          loadSavedResults();
+        } else if (data.error) {
+          statusLabel.innerText = `Error: ${data.error}`;
+          statusLabel.style.color = '#dc2626';
+          btn.disabled = false;
+          eventSource.close();
+        }
+      };
+
+      eventSource.onerror = function() {
+        statusLabel.innerText = "Connection finished.";
+        btn.disabled = false;
+        eventSource.close();
+        loadSavedResults();
+      };
+    }
+
+    // Chat Playground
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const chatContainer = document.getElementById('chatMessages');
+      chatContainer.innerHTML += `<div class="msg msg-user">${msg}</div>`;
+      input.value = '';
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg, history: chatHistory })
+        });
+        const data = await res.json();
+        chatHistory.push({ role: "user", content: msg });
+        chatHistory.push({ role: "assistant", content: data.reply });
+
+        let citationTag = '';
+        if (data.sources && data.sources.length > 0) {
+          citationTag = `<div style="font-size: 0.75rem; color: #64748b; margin-top: 6px;">Sources: ${data.sources.join(', ')}</div>`;
+        }
+
+        chatContainer.innerHTML += `<div class="msg msg-bot">${data.reply}${citationTag}</div>`;
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      } catch (e) {
+        chatContainer.innerHTML += `<div class="msg msg-bot" style="color:red;">Error connecting to agent backend.</div>`;
+      }
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter') sendChatMessage();
+    }
+
+    loadSavedResults();
+  </script>
+</body>
+</html>
